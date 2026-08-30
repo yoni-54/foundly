@@ -24,6 +24,31 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
   const description = formData.get("description") as string;
   const location = formData.get("location") as string;
   const date = formData.get("date") as string;
+  const image = formData.get("image") as File;
+
+  let imageUrl: string | null = null;
+
+  // Upload image if one was selected
+  if (image && image.size > 0) {
+    const fileName = `${Date.now()}-${image.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("item-images")
+      .upload(fileName, image);
+
+    if (uploadError) {
+      console.error(uploadError);
+      setMessage("Image upload failed.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("item-images")
+      .getPublicUrl(fileName);
+
+    imageUrl = publicUrlData.publicUrl;
+  }
 
   const { error } = await supabase.from("items").insert({
     type,
@@ -32,6 +57,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     description,
     location,
     date_lost_found: date,
+    image_url: imageUrl,
   });
 
   if (error) {

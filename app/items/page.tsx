@@ -41,6 +41,7 @@ export default async function ItemsPage() {
                 title={item.title}
                 location={item.location}
                 type={item.type}
+                image_url={item.image_url}
               />
             ))}
           </div>

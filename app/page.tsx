@@ -77,6 +77,7 @@ export default async function HomePage() {
                   title={item.title}
                   location={item.location}
                   type={item.type}
+                  image_url={item.image_url}
                 />
               ))}
             </div>
