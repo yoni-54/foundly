@@ -23,6 +23,14 @@ export default function Navbar() {
           >
             Post Item
           </Link>
+
+          <Link href="/auth/login" className="text-gray-700 hover:text-black">
+            Login
+          </Link>
+
+          <Link href="/auth/logout" className="text-gray-700 hover:text-black">
+            Logout
+          </Link>
         </div>
       </div>
     </nav>
