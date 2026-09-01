@@ -8,76 +8,80 @@ export default function PostItemPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-  const form = event.currentTarget;
+    const form = event.currentTarget;
+    setLoading(true);
+    setMessage("");
 
-  setLoading(true);
-  setMessage("");
+    const formData = new FormData(form);
 
-  const formData = new FormData(form);
+    const type = formData.get("type") as "LOST" | "FOUND";
+    const title = formData.get("title") as string;
+    const category = formData.get("category") as string;
+    const description = formData.get("description") as string;
+    const location = formData.get("location") as string;
+    const date = formData.get("date") as string;
+    const image = formData.get("image") as File;
 
-  const type = formData.get("type") as "LOST" | "FOUND";
-  const title = formData.get("title") as string;
-  const category = formData.get("category") as string;
-  const description = formData.get("description") as string;
-  const location = formData.get("location") as string;
-  const date = formData.get("date") as string;
-  const image = formData.get("image") as File;
+    let imageUrl: string | null = null;
 
-  let imageUrl: string | null = null;
+    // Upload image if one was selected
+    if (image && image.size > 0) {
+      const fileName = `${Date.now()}-${image.name}`;
 
-  // Upload image if one was selected
-  if (image && image.size > 0) {
-    const fileName = `${Date.now()}-${image.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("item-images")
+        .upload(fileName, image);
 
-    const { error: uploadError } = await supabase.storage
-      .from("item-images")
-      .upload(fileName, image);
+      if (uploadError) {
+        console.error(uploadError);
+        setMessage("Image upload failed.");
+        setLoading(false);
+        return;
+      }
 
-    if (uploadError) {
-      console.error(uploadError);
-      setMessage("Image upload failed.");
-      setLoading(false);
-      return;
+      const { data: publicUrlData } = supabase.storage
+        .from("item-images")
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrlData.publicUrl;
     }
 
-    const { data: publicUrlData } = supabase.storage
-      .from("item-images")
-      .getPublicUrl(fileName);
+    const response = await fetch("/api/items", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type,
+        title,
+        description,
+        category,
+        location,
+        date,
+        image_url: imageUrl,
+      }),
+    });
 
-    imageUrl = publicUrlData.publicUrl;
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(result.error);
+      setMessage(result.error || "Something went wrong. Please try again.");
+    } else {
+      setMessage("Item posted successfully!");
+      form.reset();
+    }
+
+    setLoading(false);
   }
-
-  const { error } = await supabase.from("items").insert({
-    type,
-    title,
-    category,
-    description,
-    location,
-    date_lost_found: date,
-    image_url: imageUrl,
-  });
-
-  if (error) {
-    console.error(error);
-    setMessage("Something went wrong. Please try again.");
-  } else {
-    setMessage("Item posted successfully!");
-    form.reset();
-  }
-
-  setLoading(false);
-}
 
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-white">
       <div className="mx-auto max-w-2xl">
-        <Link
-          href="/items"
-          className="text-sm text-gray-400 hover:text-white"
-        >
+        <Link href="/items" className="text-sm text-gray-400 hover:text-white">
           ← Back to items
         </Link>
 
@@ -104,9 +108,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
-              Item Name
-            </label>
+            <label className="mb-2 block text-sm font-medium">Item Name</label>
 
             <input
               type="text"
@@ -118,9 +120,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
-              Category
-            </label>
+            <label className="mb-2 block text-sm font-medium">Category</label>
 
             <select
               name="category"
@@ -154,9 +154,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
-              Location
-            </label>
+            <label className="mb-2 block text-sm font-medium">Location</label>
 
             <input
               type="text"
@@ -181,9 +179,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium">
-              Photo
-            </label>
+            <label className="mb-2 block text-sm font-medium">Photo</label>
 
             <input
               type="file"
@@ -202,9 +198,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
           </button>
 
           {message && (
-            <p className="text-center text-sm text-gray-300">
-              {message}
-            </p>
+            <p className="text-center text-sm text-gray-300">{message}</p>
           )}
         </form>
       </div>
