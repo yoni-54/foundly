@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 type RouteContext = {
   params: Promise<{
@@ -21,13 +21,38 @@ export async function DELETE(
     );
   }
 
+  const idToken = session.tokenSet.idToken;
+
+if (!idToken) {
+  return NextResponse.json(
+    { error: "No Auth0 ID token found." },
+    { status: 401 }
+  );
+}
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  {
+    global: {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    },
+  }
+);
+
   const { id } = await params;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("items")
     .delete()
     .eq("id", id)
-    .eq("user_id", session.user.sub);
+    .eq("user_id", session.user.sub)
+    .select();
+
+  console.log("DELETE DATA:", data);
+  console.log("DELETE ERROR:", error);
 
   if (error) {
     console.error(error);
