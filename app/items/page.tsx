@@ -15,6 +15,7 @@ type Item = {
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [selectedType, setSelectedType] = useState("ALL");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,11 +37,15 @@ export default function ItemsPage() {
     loadItems();
   }, []);
 
-  const filteredItems =
-    selectedType === "ALL"
-      ? items
-      : items.filter((item) => item.type === selectedType);
+  const filteredItems = items.filter((item) => {
+    const matchesType = selectedType === "ALL" || item.type === selectedType;
 
+    const matchesSearch =
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.location.toLowerCase().includes(search.toLowerCase());
+
+    return matchesType && matchesSearch;
+  });
   return (
     <main className="min-h-screen bg-black px-6 py-10 text-white">
       <div className="mx-auto max-w-7xl">
@@ -49,6 +54,14 @@ export default function ItemsPage() {
         <p className="mt-2 text-gray-400">
           Browse recently reported lost and found items.
         </p>
+
+        <input
+          type="text"
+          placeholder="Search by items..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mt-6 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-gray-500"
+        />
 
         <div className="mt-6 flex gap-3">
           {["ALL", "LOST", "FOUND"].map((type) => (
