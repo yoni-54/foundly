@@ -81,9 +81,12 @@ export default async function ItemDetailsPage({
               </div>
             </div>
 
-            <button className="mt-8 w-full rounded-lg bg-white px-6 py-3 font-semibold text-black hover:bg-gray-200">
+            <Link
+              href={`/items/${item.id}/contact`}
+              className="mt-8 block w-full rounded-lg bg-white px-6 py-3 text-center font-semibold text-black hover:bg-gray-200"
+            >
               Contact Poster
-            </button>
+            </Link>
           </div>
         </div>
       </div>
