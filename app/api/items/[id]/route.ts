@@ -9,8 +9,8 @@ type RouteContext = {
 };
 
 export async function DELETE(
-  request: Request,
-  { params }: RouteContext
+  _request: Request,
+  { params }: RouteContext,
 ) {
   const session = await auth0.getSession();
 
@@ -23,24 +23,20 @@ export async function DELETE(
 
   const idToken = session.tokenSet.idToken;
 
-if (!idToken) {
-  return NextResponse.json(
-    { error: "No Auth0 ID token found." },
-    { status: 401 }
-  );
-}
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-  {
-    global: {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    },
+  if (!idToken) {
+    return NextResponse.json(
+      { error: "No Auth0 ID token found." },
+      { status: 401 },
+    );
   }
-);
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      accessToken: async () => idToken,
+    },
+  );
 
   const { id } = await params;
 
@@ -49,17 +45,19 @@ const supabase = createClient(
     .delete()
     .eq("id", id)
     .eq("user_id", session.user.sub)
-    .select();
-
-  console.log("DELETE DATA:", data);
-  console.log("DELETE ERROR:", error);
+    .select("id");
 
   if (error) {
-    console.error(error);
-
     return NextResponse.json(
       { error: "Failed to delete item." },
-      { status: 500 }
+      { status: 500 },
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return NextResponse.json(
+      { error: "Item was not found or you do not have permission to delete it." },
+      { status: 403 },
     );
   }
 
