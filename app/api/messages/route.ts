@@ -1,80 +1,85 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
-  try {
-    const session = await auth0.getSession();
+  const session = await auth0.getSession();
 
-    if (!session?.user?.sub) {
-      return NextResponse.json(
-        { error: "You must be logged in." },
-        { status: 401 }
-      );
+  if (!session) {
+    return NextResponse.json(
+      { error: "You must be logged in." },
+      { status: 401 }
+    );
+  }
+
+  const idToken = session.tokenSet.idToken;
+
+  if (!idToken) {
+    return NextResponse.json(
+      { error: "No Auth0 ID token found." },
+      { status: 401 }
+    );
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      accessToken: async () => idToken,
     }
+  );
 
-    const senderId = session.user.sub;
+  const { item_id, message } = await request.json();
 
-    const { item_id, message } = await request.json();
+  if (!item_id || !message?.trim()) {
+    return NextResponse.json(
+      { error: "Item and message are required." },
+      { status: 400 }
+    );
+  }
 
-    if (!item_id || !message?.trim()) {
-      return NextResponse.json(
-        { error: "Item and message are required." },
-        { status: 400 }
-      );
-    }
+  const senderId = session.user.sub;
 
-    // Find the poster of the item
-    const { data: item, error: itemError } = await supabase
-      .from("items")
-      .select("user_id")
-      .eq("id", item_id)
-      .single();
+  const { data: item, error: itemError } = await supabase
+    .from("items")
+    .select("user_id")
+    .eq("id", item_id)
+    .single();
 
-    if (itemError || !item) {
-      return NextResponse.json(
-        { error: "Item not found." },
-        { status: 404 }
-      );
-    }
+  if (itemError || !item) {
+    return NextResponse.json(
+      { error: "Item not found." },
+      { status: 404 }
+    );
+  }
 
-    // Prevent users from messaging themselves
-    if (item.user_id === senderId) {
-      return NextResponse.json(
-        { error: "You cannot contact yourself." },
-        { status: 400 }
-      );
-    }
+  if (item.user_id === senderId) {
+    return NextResponse.json(
+      { error: "You cannot contact yourself." },
+      { status: 400 }
+    );
+  }
 
-    // Save the message
-    const { error: messageError } = await supabase
-      .from("messages")
-      .insert({
-        item_id,
-        sender_id: senderId,
-        receiver_id: item.user_id,
-        message: message.trim(),
-      });
-
-    if (messageError) {
-      console.error("MESSAGE ERROR:", messageError);
-
-      return NextResponse.json(
-        { error: "Failed to send message." },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Message sent successfully.",
+  const { error: messageError } = await supabase
+    .from("messages")
+    .insert({
+      item_id,
+      sender_id: senderId,
+      receiver_id: item.user_id,
+      message: message.trim(),
     });
-  } catch (error) {
-    console.error("POST /api/messages ERROR:", error);
+
+  if (messageError) {
+    console.error("MESSAGE ERROR:", messageError);
 
     return NextResponse.json(
-      { error: "Something went wrong." },
+      { error: "Failed to send message." },
       { status: 500 }
     );
   }
+
+  return NextResponse.json({
+    success: true,
+    message: "Message sent successfully.",
+  });
 }
