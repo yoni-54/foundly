@@ -1,5 +1,5 @@
 import { auth0 } from "@/lib/auth0";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import MyItemCard from "@/components/items/MyItemCard";
 
 export default async function ProfilePage() {
@@ -17,10 +17,36 @@ export default async function ProfilePage() {
 
   const user = session.user;
 
+  const idToken = session.tokenSet.idToken;
+
+  if (!idToken) {
+    return (
+      <main className="min-h-screen p-8">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Authentication token not found
+        </h1>
+      </main>
+    );
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      accessToken: async () => idToken,
+    },
+  );
+
   const { data: items, error } = await supabase
     .from("items")
     .select("*")
     .eq("user_id", user.sub)
+    .order("created_at", { ascending: false });
+
+  const { data: messages, error: messagesError } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("receiver_id", user.sub)
     .order("created_at", { ascending: false });
 
   return (
@@ -49,6 +75,28 @@ export default async function ProfilePage() {
                 type={item.type}
                 image_url={item.image_url}
               />
+            ))}
+          </div>
+        )}
+        <h2 className="mt-12 text-2xl font-bold">Messages</h2>
+
+        {messagesError ? (
+          <p className="mt-4 text-red-400">Could not load your messages.</p>
+        ) : !messages || messages.length === 0 ? (
+          <p className="mt-4 text-gray-400">You have no messages yet.</p>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className="rounded-xl border border-gray-700 bg-gray-900 p-5"
+              >
+                <p className="text-gray-200">{message.message}</p>
+
+                <p className="mt-3 text-sm text-gray-500">
+                  Received {new Date(message.created_at).toLocaleString()}
+                </p>
+              </div>
             ))}
           </div>
         )}
