@@ -24,6 +24,14 @@ export default function Navbar() {
             Post Item
           </Link>
 
+          <Link
+            href="/messages"
+            className="text-gray-700 hover:text-black"
+            aria-label="Messages"
+          >
+            💬
+          </Link>
+
           <Link href="/auth/login" className="text-gray-700 hover:text-black">
             Login
           </Link>
