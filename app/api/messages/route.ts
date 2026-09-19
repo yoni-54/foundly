@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth0 } from "@/lib/auth0";
-import { createClient } from "@supabase/supabase-js";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const session = await auth0.getSession();
@@ -12,50 +12,49 @@ export async function POST(request: Request) {
     );
   }
 
-  const idToken = session.tokenSet.idToken;
+  const supabase = await createServerSupabaseClient();
 
-  if (!idToken) {
+  if (!supabase) {
     return NextResponse.json(
-      { error: "No Auth0 ID token found." },
+      { error: "Authentication token not found." },
       { status: 401 }
     );
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      accessToken: async () => idToken,
-    }
-  );
+  const { item_id, receiver_id, message } = await request.json();
 
-  const { item_id, message } = await request.json();
-
-  if (!item_id || !message?.trim()) {
+  if ((!item_id && !receiver_id) || !message?.trim()) {
     return NextResponse.json(
-      { error: "Item and message are required." },
+      { error: "Recipient and message are required." },
       { status: 400 }
     );
   }
 
   const senderId = session.user.sub;
 
-  const { data: item, error: itemError } = await supabase
-    .from("items")
-    .select("user_id")
-    .eq("id", item_id)
-    .single();
+  let receiverId = receiver_id;
 
-  if (itemError || !item) {
-    return NextResponse.json(
-      { error: "Item not found." },
-      { status: 404 }
-    );
+  // Contact Poster flow
+  if (item_id) {
+    const { data: item, error: itemError } = await supabase
+      .from("items")
+      .select("user_id")
+      .eq("id", item_id)
+      .single();
+
+    if (itemError || !item) {
+      return NextResponse.json(
+        { error: "Item not found." },
+        { status: 404 }
+      );
+    }
+
+    receiverId = item.user_id;
   }
 
-  if (item.user_id === senderId) {
+  if (receiverId === senderId) {
     return NextResponse.json(
-      { error: "You cannot contact yourself." },
+      { error: "You cannot message yourself." },
       { status: 400 }
     );
   }
@@ -63,9 +62,9 @@ export async function POST(request: Request) {
   const { error: messageError } = await supabase
     .from("messages")
     .insert({
-      item_id,
+      item_id: item_id || null,
       sender_id: senderId,
-      receiver_id: item.user_id,
+      receiver_id: receiverId,
       message: message.trim(),
     });
 
