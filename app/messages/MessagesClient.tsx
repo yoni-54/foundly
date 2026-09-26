@@ -31,12 +31,10 @@ export default function MessagesClient({
       const otherUserId =
         msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
 
-      if (!users.has(otherUserId)) {
-        users.set(otherUserId, msg);
-      }
+      users.set(otherUserId, msg);
     }
 
-    return Array.from(users.entries());
+    return Array.from(users.entries()).reverse();
   }, [messages, currentUserId]);
 
   const selectedMessages = messages.filter((msg) => {
@@ -84,104 +82,145 @@ export default function MessagesClient({
   }
 
   return (
-    <div className="flex h-[600px] overflow-hidden rounded-xl border bg-white">
-      {/* Conversations */}
-      <div className="w-1/3 border-r">
-        <div className="border-b p-4">
-          <h2 className="font-semibold text-gray-900">Conversations</h2>
-        </div>
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex h-[650px]">
+        {/* Conversations */}
+        <aside className="w-[320px] border-r border-gray-200 bg-gray-50">
+          <div className="border-b border-gray-200 px-5 py-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Conversations
+            </h2>
 
-        <div>
-          {conversations.length === 0 ? (
-            <p className="p-4 text-sm text-gray-500">No conversations yet.</p>
-          ) : (
-            conversations.map(([userId, latestMessage]) => (
-              <button
-                key={userId}
-                onClick={() => setSelectedUserId(userId)}
-                className={`w-full border-b p-4 text-left hover:bg-gray-50 ${
-                  selectedUserId === userId ? "bg-gray-100" : ""
-                }`}
-              >
-                <p className="font-medium text-gray-900">{userId}</p>
-
-                <p className="mt-1 truncate text-sm text-gray-500">
-                  {latestMessage.message}
-                </p>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Chat */}
-      <div className="flex flex-1 flex-col">
-        {!selectedUserId ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-gray-500">
-              Select a conversation to view messages.
+            <p className="mt-1 text-sm text-gray-500">
+              Your recent conversations
             </p>
           </div>
-        ) : (
-          <>
-            {/* Chat header */}
-            <div className="border-b p-4">
-              <h2 className="font-semibold text-gray-900">{selectedUserId}</h2>
-            </div>
 
-            {/* Messages */}
-            <div className="flex-1 space-y-3 overflow-y-auto p-6">
-              {selectedMessages.map((msg) => {
-                const isMine = msg.sender_id === currentUserId;
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      isMine ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-lg px-4 py-3 ${
-                        isMine
-                          ? "bg-black text-white"
-                          : "bg-gray-100 text-gray-900"
-                      }`}
-                    >
-                      {msg.message}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Input */}
-            <div className="border-t p-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSend();
-                    }
-                  }}
-                  placeholder="Type a message..."
-                  className="flex-1 rounded-lg border px-4 py-2 text-gray-900 outline-none focus:border-gray-500"
-                />
-
-                <button
-                  onClick={handleSend}
-                  disabled={sending || !message.trim()}
-                  className="rounded-lg bg-black px-5 py-2 font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-                >
-                  {sending ? "Sending..." : "Send"}
-                </button>
+          <div className="overflow-y-auto">
+            {conversations.length === 0 ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm text-gray-500">No conversations yet.</p>
               </div>
+            ) : (
+              conversations.map(([userId, latestMessage]) => (
+                <button
+                  key={userId}
+                  onClick={() => setSelectedUserId(userId)}
+                  className={`flex w-full gap-3 border-b border-gray-200 px-5 py-4 text-left transition ${
+                    selectedUserId === userId ? "bg-white" : "hover:bg-white"
+                  }`}
+                >
+                  {/* Avatar */}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                    U
+                  </div>
+
+                  {/* Conversation preview */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-gray-900">User</p>
+
+                    <p className="mt-1 truncate text-sm text-gray-500">
+                      {latestMessage.message}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </aside>
+
+        {/* Chat */}
+        <section className="flex min-w-0 flex-1 flex-col">
+          {!selectedUserId ? (
+            <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-2xl">
+                💬
+              </div>
+
+              <h2 className="mt-4 text-lg font-semibold text-gray-900">
+                Your messages
+              </h2>
+
+              <p className="mt-2 max-w-sm text-sm text-gray-500">
+                Select a conversation from the left to start chatting.
+              </p>
             </div>
-          </>
-        )}
+          ) : (
+            <>
+              {/* Chat header */}
+              <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                  U
+                </div>
+
+                <div>
+                  <h2 className="font-semibold text-gray-900">User</h2>
+
+                  <p className="text-xs text-gray-500">Conversation</p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto bg-gray-50 px-6 py-6">
+                <div className="space-y-3">
+                  {selectedMessages.map((msg) => {
+                    const isMine = msg.sender_id === currentUserId;
+
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${
+                          isMine ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                            isMine
+                              ? "rounded-br-md bg-black text-white"
+                              : "rounded-bl-md bg-white text-gray-900 shadow-sm"
+                          }`}
+                        >
+                          {msg.message}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Message input */}
+              <div className="border-t border-gray-200 bg-white p-4">
+                <div className="flex items-end gap-3">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    placeholder="Write a message..."
+                    rows={1}
+                    className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                  />
+
+                  <button
+                    onClick={handleSend}
+                    disabled={sending || !message.trim()}
+                    className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {sending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+
+                <p className="mt-2 px-1 text-xs text-gray-400">
+                  Press Enter to send · Shift + Enter for a new line
+                </p>
+              </div>
+            </>
+          )}
+        </section>
       </div>
     </div>
   );
