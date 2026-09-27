@@ -169,7 +169,7 @@ export default function MessagesClient({
                     return (
                       <div
                         key={msg.id}
-                        className={`flex ${
+                        className={`flex w-full ${
                           isMine ? "justify-end" : "justify-start"
                         }`}
                       >
