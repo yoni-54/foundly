@@ -29,6 +29,16 @@ export default async function MessagesPage() {
 
   const userId = session.user.sub;
 
+  await supabase.from("profiles").upsert({
+    user_id: userId,
+    name: session.user.name,
+    picture: session.user.picture,
+  });
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, name, picture");
+
   const { data: messages, error } = await supabase
     .from("messages")
     .select("*")
@@ -43,7 +53,11 @@ export default async function MessagesPage() {
         {error ? (
           <p className="text-red-500">Could not load messages.</p>
         ) : (
-          <MessagesClient messages={messages ?? []} currentUserId={userId} />
+          <MessagesClient
+            messages={messages ?? []}
+            currentUserId={userId}
+            profiles={profiles ?? []}
+          />
         )}
       </div>
     </main>

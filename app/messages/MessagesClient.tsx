@@ -11,14 +11,22 @@ type Message = {
   created_at: string;
 };
 
+type Profile = {
+  user_id: string;
+  name: string | null;
+  picture: string | null;
+};
+
 type MessagesClientProps = {
   messages: Message[];
   currentUserId: string;
+  profiles: Profile[];
 };
 
 export default function MessagesClient({
   messages,
   currentUserId,
+  profiles,
 }: MessagesClientProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -102,29 +110,45 @@ export default function MessagesClient({
                 <p className="text-sm text-gray-500">No conversations yet.</p>
               </div>
             ) : (
-              conversations.map(([userId, latestMessage]) => (
-                <button
-                  key={userId}
-                  onClick={() => setSelectedUserId(userId)}
-                  className={`flex w-full gap-3 border-b border-gray-200 px-5 py-4 text-left transition ${
-                    selectedUserId === userId ? "bg-white" : "hover:bg-white"
-                  }`}
-                >
-                  {/* Avatar */}
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                    U
-                  </div>
+              conversations.map(([userId, latestMessage]) => {
+                const profile = profiles.find(
+                  (profile) => profile.user_id === userId,
+                );
 
-                  {/* Conversation preview */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-gray-900">User</p>
+                return (
+                  <button
+                    key={userId}
+                    onClick={() => setSelectedUserId(userId)}
+                    className={`flex w-full gap-3 border-b border-gray-200 px-5 py-4 text-left transition ${
+                      selectedUserId === userId ? "bg-white" : "hover:bg-white"
+                    }`}
+                  >
+                    {/* Avatar */}
+                    {profile?.picture ? (
+                      <img
+                        src={profile.picture}
+                        alt={profile.name ?? "User"}
+                        className="h-11 w-11 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                        {profile?.name?.charAt(0).toUpperCase() ?? "U"}
+                      </div>
+                    )}
 
-                    <p className="mt-1 truncate text-sm text-gray-500">
-                      {latestMessage.message}
-                    </p>
-                  </div>
-                </button>
-              ))
+                    {/* Conversation preview */}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-gray-900">
+                        {profile?.name ?? "User"}
+                      </p>
+
+                      <p className="mt-1 truncate text-sm text-gray-500">
+                        {latestMessage.message}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </aside>
