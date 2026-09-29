@@ -30,7 +30,12 @@ export default function MessagesClient({
 }: MessagesClientProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [messageList, setMessageList] = useState(messages);
   const [sending, setSending] = useState(false);
+
+  const selectedProfile = profiles.find(
+    (profile) => profile.user_id === selectedUserId,
+  );
 
   const conversations = useMemo(() => {
     const users = new Map<string, Message>();
@@ -45,7 +50,7 @@ export default function MessagesClient({
     return Array.from(users.entries()).reverse();
   }, [messages, currentUserId]);
 
-  const selectedMessages = messages.filter((msg) => {
+  const selectedMessages = messageList.filter((msg) => {
     if (!selectedUserId) return false;
 
     return (
@@ -77,10 +82,8 @@ export default function MessagesClient({
         alert(data.error || "Failed to send message");
         return;
       }
-
+      setMessageList((prev) => [...prev, data.message]);
       setMessage("");
-
-      window.location.reload();
     } catch (error) {
       console.error(error);
       alert("Something went wrong");
@@ -173,12 +176,22 @@ export default function MessagesClient({
             <>
               {/* Chat header */}
               <div className="flex items-center gap-3 border-b border-gray-200 px-6 py-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-                  U
-                </div>
+                {selectedProfile?.picture ? (
+                  <img
+                    src={selectedProfile.picture}
+                    alt={selectedProfile.name ?? "User"}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
+                    {selectedProfile?.name?.charAt(0).toUpperCase() ?? "U"}
+                  </div>
+                )}
 
                 <div>
-                  <h2 className="font-semibold text-gray-900">User</h2>
+                  <h2 className="font-semibold text-gray-900">
+                    {selectedProfile?.name ?? "User"}
+                  </h2>
 
                   <p className="text-xs text-gray-500">Conversation</p>
                 </div>

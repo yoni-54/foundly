@@ -59,14 +59,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error: messageError } = await supabase
+  const { data: newMessage, error: messageError } = await supabase
     .from("messages")
     .insert({
       item_id: item_id || null,
       sender_id: senderId,
       receiver_id: receiverId,
       message: message.trim(),
-    });
+    })
+    .select()
+    .single();
 
   if (messageError) {
     console.error("MESSAGE ERROR:", messageError);
@@ -79,6 +81,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    message: "Message sent successfully.",
+    message: newMessage,
   });
 }
