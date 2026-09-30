@@ -94,9 +94,9 @@ export default function MessagesClient({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div className="flex h-[650px]">
+      <div className="flex h-[650px] flex-col md:flex-row">
         {/* Conversations */}
-        <aside className="w-[320px] border-r border-gray-200 bg-gray-50">
+        <aside className="w-full shrink-0 border-b border-gray-200 bg-gray-50 md:w-[280px] md:border-b-0 md:border-r lg:w-[320px]">
           <div className="border-b border-gray-200 px-5 py-4">
             <h2 className="text-lg font-semibold text-gray-900">
               Conversations
@@ -157,7 +157,7 @@ export default function MessagesClient({
         </aside>
 
         {/* Chat */}
-        <section className="flex min-w-0 flex-1 flex-col">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
           {!selectedUserId ? (
             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-2xl">
@@ -211,7 +211,7 @@ export default function MessagesClient({
                         }`}
                       >
                         <div
-                          className={`max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+                          className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                             isMine
                               ? "rounded-br-md bg-black text-white"
                               : "rounded-bl-md bg-white text-gray-900 shadow-sm"
@@ -245,7 +245,7 @@ export default function MessagesClient({
                   <button
                     onClick={handleSend}
                     disabled={sending || !message.trim()}
-                    className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="shrink-0 rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {sending ? "Sending..." : "Send"}
                   </button>
