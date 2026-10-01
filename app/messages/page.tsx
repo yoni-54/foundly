@@ -51,7 +51,9 @@ export default async function MessagesPage() {
         <h1 className="mb-6 text-3xl font-bold text-gray-900">Messages</h1>
 
         {error ? (
-          <p className="text-red-500">Could not load messages.</p>
+          <p className="text-red-500">
+            Could not load messages: {error.message}
+          </p>
         ) : (
           <MessagesClient
             messages={messages ?? []}

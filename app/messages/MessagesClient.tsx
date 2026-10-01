@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 type Message = {
   id: string;
@@ -32,6 +33,45 @@ export default function MessagesClient({
   const [message, setMessage] = useState("");
   const [messageList, setMessageList] = useState(messages);
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("messages")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+
+          const belongsToConversation =
+            (newMessage.sender_id === currentUserId &&
+              newMessage.receiver_id === selectedUserId) ||
+            (newMessage.sender_id === selectedUserId &&
+              newMessage.receiver_id === currentUserId);
+
+          if (belongsToConversation) {
+            setMessageList((prev) => {
+              if (prev.some((msg) => msg.id === newMessage.id)) {
+                return prev;
+              }
+
+              return [...prev, newMessage];
+            });
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, selectedUserId]);
 
   const selectedProfile = profiles.find(
     (profile) => profile.user_id === selectedUserId,
