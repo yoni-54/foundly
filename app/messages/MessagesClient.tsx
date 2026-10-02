@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 type Message = {
@@ -34,44 +34,84 @@ export default function MessagesClient({
   const [messageList, setMessageList] = useState(messages);
   const [sending, setSending] = useState(false);
 
+  const selectedUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const channel = supabase
-      .channel("messages")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
-        (payload) => {
-          const newMessage = payload.new as Message;
+    selectedUserIdRef.current = selectedUserId;
+  }, [selectedUserId]);
 
-          const belongsToConversation =
-            (newMessage.sender_id === currentUserId &&
-              newMessage.receiver_id === selectedUserId) ||
-            (newMessage.sender_id === selectedUserId &&
-              newMessage.receiver_id === currentUserId);
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
 
-          if (belongsToConversation) {
-            setMessageList((prev) => {
-              if (prev.some((msg) => msg.id === newMessage.id)) {
-                return prev;
-              }
+    async function setupRealtime() {
+      const response = await fetch("/api/auth/token");
 
-              return [...prev, newMessage];
-            });
-          }
-        },
-      )
-      .subscribe((status) => {
-        console.log("Realtime status:", status);
-      });
+      if (!response.ok) {
+        console.error("Failed to get auth token");
+        return;
+      }
+
+      const { idToken } = await response.json();
+
+      if (!idToken || cancelled) {
+        return;
+      }
+
+      // Authenticate Realtime before creating the channel
+      supabase.realtime.setAuth(idToken);
+
+      if (cancelled) {
+        return;
+      }
+
+      channel = supabase
+        .channel("messages")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+          },
+          (payload) => {
+            console.log("Realtime message:", payload);
+
+            const newMessage = payload.new as Message;
+            const selectedId = selectedUserIdRef.current;
+
+            const belongsToConversation =
+              (newMessage.sender_id === currentUserId &&
+                newMessage.receiver_id === selectedId) ||
+              (newMessage.sender_id === selectedId &&
+                newMessage.receiver_id === currentUserId);
+
+            if (belongsToConversation) {
+              setMessageList((prev) => {
+                if (prev.some((msg) => msg.id === newMessage.id)) {
+                  return prev;
+                }
+
+                return [...prev, newMessage];
+              });
+            }
+          },
+        )
+        .subscribe((status) => {
+          console.log("Realtime status:", status);
+        });
+    }
+
+    setupRealtime();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, [currentUserId, selectedUserId]);
+  }, [currentUserId]);
 
   const selectedProfile = profiles.find(
     (profile) => profile.user_id === selectedUserId,
