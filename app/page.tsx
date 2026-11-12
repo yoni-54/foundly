@@ -19,7 +19,7 @@ export default async function HomePage() {
       <Navbar />
 
       <main className="min-h-screen bg-[#F7F8FA] text-[#172033]">
-        {/* Hero */}
+        {/* Hero New hero page starting from here */}
         <section className="mx-auto max-w-7xl px-5 pt-8 sm:px-6">
           <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#101D2F] via-[#172B45] to-[#263B55] px-7 py-16 text-white sm:px-12 sm:py-20 lg:px-16">
             {/* Decorative background */}
