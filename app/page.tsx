@@ -21,9 +21,9 @@ export default async function HomePage() {
       <main className="min-h-screen bg-[#F7F8FA] text-[#172033]">
         {/* Hero New hero page starting from here */}
         <section className="mx-auto max-w-7xl px-5 pt-8 sm:px-6">
-          <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#101D2F] via-[#172B45] to-[#263B55] px-7 py-16 text-white sm:px-12 sm:py-20 lg:px-16">
+          <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-[#101D2F] via-[#172B45] to-[#263B55] px-7 py-16 text-white sm:px-12 sm:py-20 lg:px-16">
             {/* Decorative background */}
-            <div className="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full border-[50px] border-white/5" />
+            <div className="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full border-50 border-white/5" />
             <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-amber-400/10 blur-3xl" />
 
             <div className="relative grid items-center gap-12 lg:grid-cols-2">
@@ -64,7 +64,7 @@ export default async function HomePage() {
               </div>
 
               {/* Decorative hero illustration */}
-              <div className="relative hidden min-h-[300px] items-center justify-center lg:flex">
+              <div className="relative hidden min-h-75 items-center justify-center lg:flex">
                 <div className="absolute h-64 w-64 rounded-full border border-white/10" />
                 <div className="absolute h-48 w-48 rounded-full border border-white/10" />
 
